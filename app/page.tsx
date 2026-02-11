@@ -148,7 +148,7 @@ export default function Dashboard() {
         {user && profile && (
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-4">
-              Welcome back, @{profile.username}
+              Welcome, @{profile.username}! 👋
             </h1>
             
             <div className="grid grid-cols-3 gap-4 max-w-md">
@@ -179,73 +179,132 @@ export default function Dashboard() {
             >
               🔑 Sign in to play
             </Link>
-            <p className="mt-4 text-sm text-gray-500">
-              Need the extension? <Link href="/extension" className="text-amber-brand hover:underline">Download it here</Link>
-            </p>
           </div>
         )}
 
-        {/* Trails Section */}
-        <section className="mb-10">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            🗺️ Trails
-          </h2>
-          
-          <div className="grid gap-4">
-            {trails.map(trail => (
+        {/* Extension Download Banner - show to logged in users */}
+        {user && (
+          <div className="bg-gradient-to-r from-[#1a1a1a] to-[#333] rounded-2xl p-6 mb-8 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-amber-brand rounded-xl flex items-center justify-center text-2xl">
+                  ◈
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Step 1: Get the Extension</h3>
+                  <p className="text-gray-300 text-sm">Your beacon glows when you're near a cache. Required to play!</p>
+                </div>
+              </div>
+              <Link
+                href="/extension"
+                className="bg-amber-brand text-white px-5 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition whitespace-nowrap"
+              >
+                Download →
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Onboarding Trail - Featured */}
+        {user && trails.length > 0 && (
+          <section className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">STEP 2</span>
+              <h2 className="text-xl font-bold">Start Here</h2>
+            </div>
+            
+            {trails.filter(t => t.name.toLowerCase().includes('onboarding') || t.name.toLowerCase().includes('voyager')).map(trail => (
               <Link 
                 key={trail.id} 
                 href={`/trail/${trail.id}`}
-                className="bg-white rounded-xl p-5 border border-gray-100 hover:border-amber-brand hover:shadow-md transition block"
+                className="block bg-gradient-to-br from-amber-light to-white rounded-2xl p-6 border-2 border-amber-brand hover:shadow-lg transition"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-lg">{trail.name}</h3>
-                    <p className="text-gray-600 text-sm mt-1">{trail.description}</p>
-                    <div className="flex gap-4 mt-3 text-sm text-gray-500">
-                      <span>{trail.cache_count} caches</span>
-                      <span>{trail.estimated_time}</span>
-                      <span>{'★'.repeat(trail.difficulty)}{'☆'.repeat(5 - trail.difficulty)}</span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🚀</span>
+                      <h3 className="font-bold text-xl">{trail.name}</h3>
+                    </div>
+                    <p className="text-gray-600 mt-1">{trail.description}</p>
+                    <div className="flex gap-4 mt-4 text-sm text-gray-500">
+                      <span className="bg-white px-2 py-1 rounded">{trail.cache_count} caches</span>
+                      <span className="bg-white px-2 py-1 rounded">{trail.estimated_time}</span>
+                      <span className="bg-white px-2 py-1 rounded">{'★'.repeat(trail.difficulty)}{'☆'.repeat(5 - trail.difficulty)} Beginner</span>
                     </div>
                   </div>
-                  <div className="text-amber-brand text-2xl">→</div>
+                  <div className="text-amber-brand text-3xl">→</div>
                 </div>
               </Link>
             ))}
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Caches Section */}
-        <section>
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            🔥 Ready to Find
-          </h2>
-          
-          <div className="grid gap-4">
-            {caches.map(cache => (
-              <Link
-                key={cache.id}
-                href={`/cache/${cache.id}`}
-                className="bg-white rounded-xl p-5 border border-gray-100 hover:border-amber-brand hover:shadow-md transition block"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-amber-brand">◈</span>
-                      <h3 className="font-bold">{cache.name}</h3>
+        {/* Other Trails Section */}
+        {trails.filter(t => !t.name.toLowerCase().includes('onboarding') && !t.name.toLowerCase().includes('voyager')).length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              🗺️ More Trails
+            </h2>
+            
+            <div className="grid gap-4">
+              {trails.filter(t => !t.name.toLowerCase().includes('onboarding') && !t.name.toLowerCase().includes('voyager')).map(trail => (
+                <Link 
+                  key={trail.id} 
+                  href={`/trail/${trail.id}`}
+                  className="bg-white rounded-xl p-5 border border-gray-100 hover:border-amber-brand hover:shadow-md transition block"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-lg">{trail.name}</h3>
+                      <p className="text-gray-600 text-sm mt-1">{trail.description}</p>
+                      <div className="flex gap-4 mt-3 text-sm text-gray-500">
+                        <span>{trail.cache_count} caches</span>
+                        <span>{trail.estimated_time}</span>
+                        <span>{'★'.repeat(trail.difficulty)}{'☆'.repeat(5 - trail.difficulty)}</span>
+                      </div>
                     </div>
-                    <p className="text-gray-600 text-sm mt-1 italic">"{cache.clue}"</p>
-                    <div className="flex gap-4 mt-3 text-sm text-gray-500">
-                      <span>👥 {cache.finds_count} finds</span>
-                      <span>{'★'.repeat(cache.difficulty)}{'☆'.repeat(5 - cache.difficulty)}</span>
-                      {cache.category && <span className="text-amber-brand">#{cache.category}</span>}
+                    <div className="text-amber-brand text-2xl">→</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Discovery Caches Section */}
+        {caches.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              🔥 Discovery Caches
+            </h2>
+            <p className="text-gray-500 text-sm mb-4">Individual caches hidden across the web. Use the clue to find them!</p>
+            
+            <div className="grid gap-4">
+              {caches.map(cache => (
+                <Link
+                  key={cache.id}
+                  href={`/cache/${cache.id}`}
+                  className="bg-white rounded-xl p-5 border border-gray-100 hover:border-amber-brand hover:shadow-md transition block"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-brand">◈</span>
+                        <h3 className="font-bold">{cache.name}</h3>
+                      </div>
+                      <p className="text-gray-600 text-sm mt-1 italic">"{cache.clue}"</p>
+                      <div className="flex gap-4 mt-3 text-sm text-gray-500">
+                        <span>👥 {cache.finds_count} finds</span>
+                        <span>{'★'.repeat(cache.difficulty)}{'☆'.repeat(5 - cache.difficulty)}</span>
+                        {cache.category && <span className="text-amber-brand">#{cache.category}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   )
