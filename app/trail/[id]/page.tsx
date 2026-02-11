@@ -14,6 +14,7 @@ export default function TrailDetail() {
   const [user, setUser] = useState<User | null>(null)
   const [userFinds, setUserFinds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [loggingFind, setLoggingFind] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -59,9 +60,53 @@ export default function TrailDetail() {
     load()
   }, [params.id])
 
+  async function logFindManually(cacheId: string) {
+    if (!user) return
+    
+    setLoggingFind(cacheId)
+    
+    try {
+      // Insert find record
+      const { error } = await supabase
+        .from('finds')
+        .insert({
+          cache_id: cacheId,
+          user_id: user.id,
+          log_text: 'Logged from dashboard'
+        })
+      
+      if (error) {
+        if (error.code === '23505') {
+          // Already found - just add to local state
+          setUserFinds(prev => new Set([...prev, cacheId]))
+        } else {
+          console.error('Error logging find:', error)
+          alert('Error logging find. Please try again.')
+        }
+      } else {
+        // Success - update local state
+        setUserFinds(prev => new Set([...prev, cacheId]))
+        
+        // Update cache finds_count (increment by 1)
+        const cache = caches.find(c => c.id === cacheId)
+        if (cache) {
+          await supabase
+            .from('caches')
+            .update({ finds_count: (cache.finds_count || 0) + 1 })
+            .eq('id', cacheId)
+        }
+      }
+    } catch (e) {
+      console.error('Error:', e)
+      alert('Error logging find. Please try again.')
+    }
+    
+    setLoggingFind(null)
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
         <div className="text-xl text-gray-500">Loading...</div>
       </div>
     )
@@ -69,7 +114,7 @@ export default function TrailDetail() {
 
   if (!trail) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
         <div className="text-xl text-gray-500">Trail not found</div>
       </div>
     )
@@ -207,6 +252,17 @@ export default function TrailDetail() {
                       >
                         View
                       </Link>
+                    )}
+                    
+                    {/* Manual log button for current cache */}
+                    {isCurrent && !found && user && (
+                      <button
+                        onClick={() => logFindManually(cache.id)}
+                        disabled={loggingFind === cache.id}
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-amber-brand text-white hover:bg-[#a86b1d] transition disabled:opacity-50"
+                      >
+                        {loggingFind === cache.id ? 'Logging...' : '✓ I found it!'}
+                      </button>
                     )}
                   </div>
                 </div>
