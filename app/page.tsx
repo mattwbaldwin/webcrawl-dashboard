@@ -70,9 +70,9 @@ export default function Dashboard() {
   function syncToExtension(user: User, profile: Profile | null) {
     // Try to send auth to extension
     const extensionId = process.env.NEXT_PUBLIC_EXTENSION_ID
-    if (extensionId && typeof chrome !== 'undefined' && chrome.runtime) {
+    if (extensionId && typeof window !== 'undefined' && (window as any).chrome?.runtime) {
       try {
-        chrome.runtime.sendMessage(extensionId, {
+        (window as any).chrome.runtime.sendMessage(extensionId, {
           type: 'AUTH_TOKEN',
           token: null, // We'll use the session
           user: {
