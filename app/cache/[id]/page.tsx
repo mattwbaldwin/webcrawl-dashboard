@@ -14,7 +14,6 @@ export default function CacheDetail() {
   const [user, setUser] = useState<User | null>(null)
   const [userFind, setUserFind] = useState<Find | null>(null)
   const [loading, setLoading] = useState(true)
-  const [logging, setLogging] = useState(false)
   
   const supabase = createClient()
 
@@ -48,29 +47,6 @@ export default function CacheDetail() {
     
     load()
   }, [params.id])
-
-  async function logFind() {
-    if (!user || !cache) return
-    
-    setLogging(true)
-    
-    const { data, error } = await supabase
-      .from('finds')
-      .insert({
-        cache_id: cache.id,
-        user_id: user.id,
-      })
-      .select()
-      .single()
-    
-    if (data) {
-      setUserFind(data)
-      // Update local cache count
-      setCache(prev => prev ? { ...prev, finds_count: prev.finds_count + 1 } : null)
-    }
-    
-    setLogging(false)
-  }
 
   if (loading) {
     return (
@@ -148,7 +124,7 @@ export default function CacheDetail() {
             {/* Actions */}
             {!user ? (
               <div className="bg-gray-100 rounded-xl p-4 text-center text-gray-600">
-                Sign in to log your find
+                Sign in to track your finds
               </div>
             ) : hasFound ? (
               <div className="bg-green-100 rounded-xl p-4 text-center text-green-700">
@@ -156,22 +132,13 @@ export default function CacheDetail() {
                 {userFind?.is_ftc && <span className="block text-sm mt-1">🏆 First to Crawl!</span>}
               </div>
             ) : (
-              <div className="space-y-4">
-                <a
-                  href={cache.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-gray-100 text-gray-700 text-center py-3 rounded-xl font-medium hover:bg-gray-200 transition"
-                >
-                  🔍 Visit Page to Hunt
-                </a>
-                <button
-                  onClick={logFind}
-                  disabled={logging}
-                  className="w-full bg-[#C17F24] text-white py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition disabled:opacity-50"
-                >
-                  {logging ? 'Logging...' : '🎉 Log Find'}
-                </button>
+              <div className="bg-amber-light rounded-xl p-4 text-center">
+                <p className="text-gray-700 mb-2">
+                  Use the clue to find this page on the web.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Your extension will glow when you're close! 🔥
+                </p>
               </div>
             )}
           </div>

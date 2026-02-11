@@ -69,12 +69,11 @@ export default function Dashboard() {
 
   function syncToExtension(user: User, profile: Profile | null) {
     // Try to send auth to extension
-    const extensionId = process.env.NEXT_PUBLIC_EXTENSION_ID
-    if (extensionId && typeof window !== 'undefined' && (window as any).chrome?.runtime) {
+    const extensionId = 'bkkaddggiocklldkepkjafkaiadmlljd'
+    if (typeof window !== 'undefined' && (window as any).chrome?.runtime) {
       try {
         (window as any).chrome.runtime.sendMessage(extensionId, {
-          type: 'AUTH_TOKEN',
-          token: null, // We'll use the session
+          type: 'AUTH_SYNC',
           user: {
             id: user.id,
             email: user.email,
@@ -134,12 +133,12 @@ export default function Dashboard() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={signInWithGoogle}
+            <Link
+              href="/login"
               className="bg-[#C17F24] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#a86b1d] transition"
             >
-              Sign in with Google
-            </button>
+              Sign in
+            </Link>
           )}
         </div>
       </header>
@@ -174,12 +173,15 @@ export default function Dashboard() {
           <div className="bg-amber-light border border-amber-border rounded-2xl p-8 mb-8 text-center">
             <h1 className="text-3xl font-bold mb-2">The internet is an open world.</h1>
             <p className="text-gray-600 mb-6">Sign in to start finding and dropping caches.</p>
-            <button
-              onClick={signInWithGoogle}
-              className="bg-[#C17F24] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition"
+            <Link
+              href="/login"
+              className="inline-block bg-[#C17F24] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition"
             >
-              🔑 Sign in with Google
-            </button>
+              🔑 Sign in to play
+            </Link>
+            <p className="mt-4 text-sm text-gray-500">
+              Need the extension? <Link href="/extension" className="text-amber-brand hover:underline">Download it here</Link>
+            </p>
           </div>
         )}
 

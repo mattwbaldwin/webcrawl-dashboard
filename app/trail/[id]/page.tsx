@@ -79,6 +79,9 @@ export default function TrailDetail() {
   const progress = caches.length > 0 ? (foundCount / caches.length) * 100 : 0
   const isComplete = foundCount === caches.length && caches.length > 0
 
+  // Find the first unfound cache (current target)
+  const currentCacheIndex = caches.findIndex(c => !userFinds.has(c.id))
+
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
       {/* Header */}
@@ -122,25 +125,51 @@ export default function TrailDetail() {
           )}
         </div>
 
+        {/* Starting Point - only show if trail not started */}
+        {caches.length > 0 && currentCacheIndex === 0 && user && (
+          <div className="mb-6 bg-amber-light border border-amber-brand/20 rounded-xl p-5">
+            <div className="text-sm font-medium text-amber-brand mb-2">🚀 START HERE</div>
+            <p className="text-gray-700 mb-3">
+              Begin your trail at this page:
+            </p>
+            <a
+              href={caches[0].url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-white text-amber-brand px-4 py-2 rounded-lg font-medium hover:bg-amber-brand hover:text-white transition"
+            >
+              🌐 Open Starting Page →
+            </a>
+            <p className="text-sm text-gray-500 mt-3">
+              Your extension will guide you from there!
+            </p>
+          </div>
+        )}
+
         {/* Caches */}
         <div className="space-y-4">
           {caches.map((cache, index) => {
             const found = userFinds.has(cache.id)
             const prevFound = index === 0 || userFinds.has(caches[index - 1].id)
             const isLocked = !found && !prevFound && user
+            const isCurrent = index === currentCacheIndex && user
             
             return (
               <div 
                 key={cache.id}
                 className={`bg-white rounded-xl border overflow-hidden ${
-                  found ? 'border-green-300' : isLocked ? 'border-gray-200 opacity-60' : 'border-gray-200'
+                  found ? 'border-green-300' : 
+                  isCurrent ? 'border-amber-brand border-2' :
+                  isLocked ? 'border-gray-200 opacity-60' : 'border-gray-200'
                 }`}
               >
                 <div className="p-5">
                   <div className="flex items-start gap-4">
                     {/* Step number */}
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      found ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'
+                      found ? 'bg-green-500 text-white' : 
+                      isCurrent ? 'bg-amber-brand text-white' :
+                      'bg-gray-100 text-gray-500'
                     }`}>
                       {found ? '✓' : index + 1}
                     </div>
@@ -158,23 +187,25 @@ export default function TrailDetail() {
                       )}
                       
                       {found && (
-                        <p className="text-gray-500 text-sm mt-2">
-                          Found!
+                        <p className="text-green-600 text-sm mt-2 font-medium">
+                          ✓ Found!
+                        </p>
+                      )}
+                      
+                      {isCurrent && !found && (
+                        <p className="text-amber-brand text-sm mt-2 font-medium">
+                          🔥 Currently hunting
                         </p>
                       )}
                     </div>
                     
                     {/* Action */}
-                    {!isLocked && (
+                    {found && (
                       <Link
                         href={`/cache/${cache.id}`}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                          found 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-amber-light text-amber-brand hover:bg-[#f5e6d3]'
-                        }`}
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-700"
                       >
-                        {found ? 'View' : 'Hunt →'}
+                        View
                       </Link>
                     )}
                   </div>

@@ -10,20 +10,40 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const { error } = await supabase.auth.getSession()
+      const { data: { session }, error } = await supabase.auth.getSession()
       if (error) {
         console.error('Auth error:', error)
+        router.push('/login')
+        return
       }
-      router.push('/')
+      
+      if (session?.user) {
+        // Check if user has a profile with username
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (!profile?.username) {
+          // New user - send to welcome page
+          router.push('/welcome')
+        } else {
+          // Existing user - send to dashboard
+          router.push('/')
+        }
+      } else {
+        router.push('/login')
+      }
     }
 
     handleCallback()
   }, [router, supabase])
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
       <div className="text-center">
-        <div className="text-4xl mb-4">◈</div>
+        <div className="text-4xl mb-4 text-amber-brand">◈</div>
         <div className="text-xl text-gray-500">Signing you in...</div>
       </div>
     </div>
