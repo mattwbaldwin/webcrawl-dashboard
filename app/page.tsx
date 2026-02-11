@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { Profile, Cache, Trail } from '@/lib/types'
 import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null)
@@ -14,25 +15,38 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     async function init() {
       // Check auth
       const { data: { user } } = await supabase.auth.getUser()
+      
+      // If not logged in, redirect to login page
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      
       setUser(user)
       
-      if (user) {
-        // Get profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        setProfile(profile)
-        
-        // Sync auth to extension
-        syncToExtension(user, profile)
+      // Get profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      
+      // If no username, redirect to welcome
+      if (!profile?.username) {
+        router.push('/welcome')
+        return
       }
+      
+      setProfile(profile)
+      
+      // Sync auth to extension
+      syncToExtension(user, profile)
       
       // Get caches (public)
       const { data: cachesData } = await supabase
@@ -98,8 +112,7 @@ export default function Dashboard() {
 
   async function signOut() {
     await supabase.auth.signOut()
-    setUser(null)
-    setProfile(null)
+    router.push('/login')
   }
 
   if (loading) {
@@ -122,9 +135,9 @@ export default function Dashboard() {
             <span className="text-xl font-bold">Webcrawl</span>
           </div>
           
-          {user ? (
+          {user && profile && (
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">@{profile?.username}</span>
+              <span className="text-sm text-gray-600">@{profile.username}</span>
               <button
                 onClick={signOut}
                 className="text-sm text-gray-500 hover:text-gray-700"
@@ -132,13 +145,6 @@ export default function Dashboard() {
                 Sign out
               </button>
             </div>
-          ) : (
-            <Link
-              href="/login"
-              className="bg-[#C17F24] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#a86b1d] transition"
-            >
-              Sign in
-            </Link>
           )}
         </div>
       </header>
@@ -168,52 +174,40 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Not logged in prompt */}
-        {!user && (
-          <div className="bg-amber-light border border-amber-border rounded-2xl p-8 mb-8 text-center">
-            <h1 className="text-3xl font-bold mb-2">The internet is an open world.</h1>
-            <p className="text-gray-600 mb-6">Sign in to start finding and dropping caches.</p>
+        {/* Extension Download Banner */}
+        <div className="bg-gradient-to-r from-[#1a1a1a] to-[#333] rounded-2xl p-6 mb-8 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-amber-brand rounded-xl flex items-center justify-center text-2xl">
+                ◈
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Step 1: Get the Extension</h3>
+                <p className="text-gray-300 text-sm">Your beacon glows when you're near a cache. Required to play!</p>
+              </div>
+            </div>
             <Link
-              href="/login"
-              className="inline-block bg-[#C17F24] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition"
+              href="/extension"
+              className="bg-amber-brand text-white px-5 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition whitespace-nowrap"
             >
-              🔑 Sign in to play
+              Download →
             </Link>
           </div>
-        )}
-
-        {/* Extension Download Banner - show to logged in users */}
-        {user && (
-          <div className="bg-gradient-to-r from-[#1a1a1a] to-[#333] rounded-2xl p-6 mb-8 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-amber-brand rounded-xl flex items-center justify-center text-2xl">
-                  ◈
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">Step 1: Get the Extension</h3>
-                  <p className="text-gray-300 text-sm">Your beacon glows when you're near a cache. Required to play!</p>
-                </div>
-              </div>
-              <Link
-                href="/extension"
-                className="bg-amber-brand text-white px-5 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition whitespace-nowrap"
-              >
-                Download →
-              </Link>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Onboarding Trail - Featured */}
-        {user && trails.length > 0 && (
+        {trails.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">STEP 2</span>
               <h2 className="text-xl font-bold">Start Here</h2>
             </div>
             
-            {trails.filter(t => t.name.toLowerCase().includes('onboarding') || t.name.toLowerCase().includes('voyager')).map(trail => (
+            {trails.filter(t => 
+              t.name.toLowerCase().includes('onboarding') || 
+              t.name.toLowerCase().includes('voyager') ||
+              t.name.toLowerCase().includes('first')
+            ).map(trail => (
               <Link 
                 key={trail.id} 
                 href={`/trail/${trail.id}`}
@@ -240,14 +234,22 @@ export default function Dashboard() {
         )}
 
         {/* Other Trails Section */}
-        {trails.filter(t => !t.name.toLowerCase().includes('onboarding') && !t.name.toLowerCase().includes('voyager')).length > 0 && (
+        {trails.filter(t => 
+          !t.name.toLowerCase().includes('onboarding') && 
+          !t.name.toLowerCase().includes('voyager') &&
+          !t.name.toLowerCase().includes('first')
+        ).length > 0 && (
           <section className="mb-10">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
               🗺️ More Trails
             </h2>
             
             <div className="grid gap-4">
-              {trails.filter(t => !t.name.toLowerCase().includes('onboarding') && !t.name.toLowerCase().includes('voyager')).map(trail => (
+              {trails.filter(t => 
+                !t.name.toLowerCase().includes('onboarding') && 
+                !t.name.toLowerCase().includes('voyager') &&
+                !t.name.toLowerCase().includes('first')
+              ).map(trail => (
                 <Link 
                   key={trail.id} 
                   href={`/trail/${trail.id}`}
