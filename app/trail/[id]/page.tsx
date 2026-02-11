@@ -78,14 +78,22 @@ export default function TrailDetail() {
       if (error) {
         if (error.code === '23505') {
           // Already found - just add to local state
-          setUserFinds(prev => new Set([...prev, cacheId]))
+          setUserFinds(prev => {
+            const newSet = new Set(Array.from(prev))
+            newSet.add(cacheId)
+            return newSet
+          })
         } else {
           console.error('Error logging find:', error)
           alert('Error logging find. Please try again.')
         }
       } else {
         // Success - update local state
-        setUserFinds(prev => new Set([...prev, cacheId]))
+        setUserFinds(prev => {
+          const newSet = new Set(Array.from(prev))
+          newSet.add(cacheId)
+          return newSet
+        })
         
         // Update cache finds_count (increment by 1)
         const cache = caches.find(c => c.id === cacheId)
