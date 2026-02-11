@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --amber-brand: #C17F24;
+  --amber-light: #FDF4E7;
+  --amber-border: #f0dfc0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #FAFAF8;
+  color: #1a1a1a;
+}
+
+@layer utilities {
+  .text-amber-brand {
+    color: var(--amber-brand);
+  }
+  .bg-amber-brand {
+    background-color: var(--amber-brand);
+  }
+  .bg-amber-light {
+    background-color: var(--amber-light);
+  }
+  .border-amber-border {
+    border-color: var(--amber-border);
+  }
+}
