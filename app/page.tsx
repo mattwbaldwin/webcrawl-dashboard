@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<UserStats>({ finds_count: 0, drops_count: 0, ftc_count: 0 })
   const [caches, setCaches] = useState<Cache[]>([])
   const [trails, setTrails] = useState<Trail[]>([])
+  const [userFinds, setUserFinds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   
   const supabase = createClient()
@@ -55,7 +56,7 @@ export default function Dashboard() {
       // Get actual stats from finds table
       const { data: findsData } = await supabase
         .from('finds')
-        .select('id, is_ftc')
+        .select('id, is_ftc, cache_id')
         .eq('user_id', user.id)
       
       const { data: dropsData } = await supabase
@@ -68,6 +69,10 @@ export default function Dashboard() {
         drops_count: dropsData?.length || 0,
         ftc_count: findsData?.filter(f => f.is_ftc).length || 0
       })
+      
+      // Store which caches the user has found
+      const foundCacheIds = new Set(findsData?.map(f => f.cache_id) || [])
+      setUserFinds(foundCacheIds)
       
       // Sync auth to extension
       syncToExtension(user, profile)
@@ -309,34 +314,55 @@ export default function Dashboard() {
         {/* Discovery Caches Section */}
         {caches.length > 0 && (
           <section>
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              🔥 Discovery Caches
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                🔥 Discovery Caches
+              </h2>
+              <button
+                onClick={() => window.location.reload()}
+                className="text-sm text-gray-500 hover:text-amber-brand flex items-center gap-1"
+              >
+                🔄 Refresh
+              </button>
+            </div>
             <p className="text-gray-500 text-sm mb-4">Individual caches hidden across the web. Use the clue to find them!</p>
             
             <div className="grid gap-4">
-              {caches.map(cache => (
-                <Link
-                  key={cache.id}
-                  href={`/cache/${cache.id}`}
-                  className="bg-white rounded-xl p-5 border border-gray-100 hover:border-amber-brand hover:shadow-md transition block"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-amber-brand">◈</span>
-                        <h3 className="font-bold">{cache.name}</h3>
-                      </div>
-                      <p className="text-gray-600 text-sm mt-1 italic">"{cache.clue}"</p>
-                      <div className="flex gap-4 mt-3 text-sm text-gray-500">
-                        <span>👥 {cache.finds_count} finds</span>
-                        <span>{'★'.repeat(cache.difficulty)}{'☆'.repeat(5 - cache.difficulty)}</span>
-                        {cache.category && <span className="text-amber-brand">#{cache.category}</span>}
+              {caches.map(cache => {
+                const isFound = userFinds.has(cache.id)
+                return (
+                  <Link
+                    key={cache.id}
+                    href={`/cache/${cache.id}`}
+                    className={`rounded-xl p-5 border transition block ${
+                      isFound 
+                        ? 'bg-green-50 border-green-200 hover:border-green-400' 
+                        : 'bg-white border-gray-100 hover:border-amber-brand hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={isFound ? 'text-green-500' : 'text-amber-brand'}>
+                            {isFound ? '✓' : '◈'}
+                          </span>
+                          <h3 className="font-bold">{cache.name}</h3>
+                          {isFound && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                              Found
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-600 text-sm mt-1 italic">"{cache.clue}"</p>
+                        <div className="flex gap-4 mt-3 text-sm text-gray-500">
+                          <span>👥 {cache.finds_count} finds</span>
+                          <span>{'★'.repeat(cache.difficulty)}{'☆'.repeat(5 - cache.difficulty)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              })}
             </div>
           </section>
         )}

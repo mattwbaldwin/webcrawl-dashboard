@@ -59,7 +59,7 @@ export default function ExtensionPage() {
                     Download the zip file containing the extension.
                   </p>
                   <a
-                    href="/webcrawl-extension-v2.zip"
+                    href="/webcrawl-extension.zip"
                     download
                     className="inline-flex items-center gap-2 bg-amber-brand text-white px-4 py-2 rounded-lg font-medium hover:bg-[#a86b1d] transition"
                   >
@@ -79,7 +79,7 @@ export default function ExtensionPage() {
                   <h3 className="font-bold mb-2">Unzip the file</h3>
                   <p className="text-gray-600 text-sm">
                     Find the downloaded file and unzip it. You should have a folder called 
-                    <code className="bg-gray-100 px-1 rounded mx-1">webcrawl-extension-v2</code>.
+                    <code className="bg-gray-100 px-1 rounded mx-1">webcrawl-extension</code>.
                   </p>
                 </div>
               </div>
@@ -133,7 +133,7 @@ export default function ExtensionPage() {
                 <div>
                   <h3 className="font-bold mb-2">Load the extension</h3>
                   <p className="text-gray-600 text-sm">
-                    Click <strong>"Load unpacked"</strong> and select the <code className="bg-gray-100 px-1 rounded">webcrawl-extension-v2</code> folder you unzipped.
+                    Click <strong>"Load unpacked"</strong> and select the <code className="bg-gray-100 px-1 rounded">webcrawl-extension</code> folder you unzipped.
                   </p>
                 </div>
               </div>
