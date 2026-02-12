@@ -7,9 +7,16 @@ import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+interface UserStats {
+  finds_count: number
+  drops_count: number
+  ftc_count: number
+}
+
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [stats, setStats] = useState<UserStats>({ finds_count: 0, drops_count: 0, ftc_count: 0 })
   const [caches, setCaches] = useState<Cache[]>([])
   const [trails, setTrails] = useState<Trail[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,6 +51,23 @@ export default function Dashboard() {
       }
       
       setProfile(profile)
+      
+      // Get actual stats from finds table
+      const { data: findsData } = await supabase
+        .from('finds')
+        .select('id, is_ftc')
+        .eq('user_id', user.id)
+      
+      const { data: dropsData } = await supabase
+        .from('caches')
+        .select('id')
+        .eq('owner_id', user.id)
+      
+      setStats({
+        finds_count: findsData?.length || 0,
+        drops_count: dropsData?.length || 0,
+        ftc_count: findsData?.filter(f => f.is_ftc).length || 0
+      })
       
       // Sync auth to extension
       syncToExtension(user, profile)
@@ -159,15 +183,15 @@ export default function Dashboard() {
             
             <div className="grid grid-cols-3 gap-4 max-w-md">
               <div className="bg-white rounded-xl p-4 text-center border border-gray-100">
-                <div className="text-3xl font-bold text-amber-brand">{profile.finds_count}</div>
+                <div className="text-3xl font-bold text-amber-brand">{stats.finds_count}</div>
                 <div className="text-sm text-gray-500">Found</div>
               </div>
               <div className="bg-white rounded-xl p-4 text-center border border-gray-100">
-                <div className="text-3xl font-bold text-amber-brand">{profile.drops_count}</div>
+                <div className="text-3xl font-bold text-amber-brand">{stats.drops_count}</div>
                 <div className="text-sm text-gray-500">Dropped</div>
               </div>
               <div className="bg-white rounded-xl p-4 text-center border border-gray-100">
-                <div className="text-3xl font-bold text-amber-brand">{profile.ftc_count}</div>
+                <div className="text-3xl font-bold text-amber-brand">{stats.ftc_count}</div>
                 <div className="text-sm text-gray-500">FTCs</div>
               </div>
             </div>

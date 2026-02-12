@@ -14,6 +14,7 @@ export default function CacheDetail() {
   const [user, setUser] = useState<User | null>(null)
   const [userFind, setUserFind] = useState<Find | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loggingFind, setLoggingFind] = useState(false)
   
   const supabase = createClient()
 
@@ -48,9 +49,51 @@ export default function CacheDetail() {
     load()
   }, [params.id])
 
+  async function logFindManually() {
+    if (!user || !cache) return
+    
+    setLoggingFind(true)
+    
+    try {
+      const { data, error } = await supabase
+        .from('finds')
+        .insert({
+          cache_id: cache.id,
+          user_id: user.id,
+          log_text: 'Logged from dashboard'
+        })
+        .select()
+        .single()
+      
+      if (error) {
+        if (error.code === '23505') {
+          // Already found - reload to show
+          window.location.reload()
+        } else {
+          console.error('Error logging find:', error)
+          alert('Error logging find. Please try again.')
+        }
+      } else {
+        // Success - update cache finds count
+        await supabase
+          .from('caches')
+          .update({ finds_count: (cache.finds_count || 0) + 1 })
+          .eq('id', cache.id)
+        
+        setUserFind(data)
+        setCache({ ...cache, finds_count: (cache.finds_count || 0) + 1 })
+      }
+    } catch (e) {
+      console.error('Error:', e)
+      alert('Error logging find. Please try again.')
+    }
+    
+    setLoggingFind(false)
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
         <div className="text-xl text-gray-500">Loading...</div>
       </div>
     )
@@ -58,7 +101,7 @@ export default function CacheDetail() {
 
   if (!cache) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
         <div className="text-xl text-gray-500">Cache not found</div>
       </div>
     )
@@ -124,7 +167,7 @@ export default function CacheDetail() {
             {/* Actions */}
             {!user ? (
               <div className="bg-gray-100 rounded-xl p-4 text-center text-gray-600">
-                Sign in to track your finds
+                <Link href="/login" className="text-amber-brand hover:underline">Sign in</Link> to track your finds
               </div>
             ) : hasFound ? (
               <div className="bg-green-100 rounded-xl p-4 text-center text-green-700">
@@ -132,12 +175,25 @@ export default function CacheDetail() {
                 {userFind?.is_ftc && <span className="block text-sm mt-1">🏆 First to Crawl!</span>}
               </div>
             ) : (
-              <div className="bg-amber-light rounded-xl p-4 text-center">
-                <p className="text-gray-700 mb-2">
-                  Use the clue to find this page on the web.
-                </p>
-                <p className="text-sm text-gray-500">
-                  Your extension will glow when you're close! 🔥
+              <div className="space-y-4">
+                <div className="bg-amber-light rounded-xl p-4 text-center">
+                  <p className="text-gray-700 mb-2">
+                    Use the clue to find this page on the web.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Your extension will glow when you're close! 🔥
+                  </p>
+                </div>
+                
+                <button
+                  onClick={logFindManually}
+                  disabled={loggingFind}
+                  className="w-full py-3 rounded-xl font-semibold bg-amber-brand text-white hover:bg-[#a86b1d] transition disabled:opacity-50"
+                >
+                  {loggingFind ? 'Logging...' : '✓ I found it!'}
+                </button>
+                <p className="text-xs text-center text-gray-400">
+                  Click after you've found the cache with your extension
                 </p>
               </div>
             )}
