@@ -105,24 +105,22 @@ export default function Dashboard() {
     return () => subscription.unsubscribe()
   }, [])
 
-  function syncToExtension(user: User, profile: Profile | null) {
-    // Try to send auth to extension
-    const extensionId = 'bkkaddggiocklldkepkjafkaiadmlljd'
-    if (typeof window !== 'undefined' && (window as any).chrome?.runtime) {
-      try {
-        (window as any).chrome.runtime.sendMessage(extensionId, {
-          type: 'AUTH_SYNC',
-          user: {
-            id: user.id,
-            email: user.email,
-            username: profile?.username || user.email?.split('@')[0],
-            tier: profile?.tier || 'scout'
-          }
-        })
-      } catch (e) {
-        // Extension not installed
-      }
+  async function syncToExtension(user: User, profile: Profile | null) {
+    // Get the full session with tokens
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    
+    // Store auth data for extension to pick up via localStorage
+    const authData = {
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      user: session.user,
+      profile: profile
     }
+    localStorage.setItem('webcrawl_extension_auth', JSON.stringify(authData))
+    
+    // Dispatch event for extension content script
+    window.dispatchEvent(new CustomEvent('webcrawl_auth_ready', { detail: authData }))
   }
 
   async function signInWithGoogle() {
@@ -206,16 +204,27 @@ export default function Dashboard() {
                 ◈
               </div>
               <div>
-                <h3 className="font-bold text-lg">Step 1: Get the Extension</h3>
-                <p className="text-gray-300 text-sm">Your beacon glows when you're near a cache. Required to play!</p>
+                <h3 className="font-bold text-lg">Get the Extension</h3>
+                <p className="text-gray-300 text-sm">Your beacon glows when you're near a cache</p>
               </div>
             </div>
-            <Link
-              href="/extension"
-              className="bg-amber-brand text-white px-5 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition whitespace-nowrap"
-            >
-              Download →
-            </Link>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  syncToExtension(user!, profile)
+                  alert('Auth synced! If your extension is installed, it should now be logged in. Try visiting a cache page.')
+                }}
+                className="bg-white/20 text-white px-4 py-3 rounded-xl font-medium hover:bg-white/30 transition text-sm"
+              >
+                Sync Extension
+              </button>
+              <Link
+                href="/extension"
+                className="bg-amber-brand text-white px-5 py-3 rounded-xl font-semibold hover:bg-[#a86b1d] transition whitespace-nowrap"
+              >
+                Download →
+              </Link>
+            </div>
           </div>
         </div>
 
